@@ -364,6 +364,15 @@
             background: var(--primary-color);
             border-color: var(--primary-color);
         }
+        
+        .no-token-message {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body class="animated-bg">
@@ -609,7 +618,6 @@
         
         let people = [];
         let lastUpdateTime = null;
-        let githubToken = '';
         let currentUploadMethod = 'link';
 
         // Початкові дані з фото з вашого GitHub
@@ -663,81 +671,30 @@
             showLoadingState(false);
         }
 
-        // Функція для збереження даних в GitHub
+        // Функція для збереження даних в GitHub (тепер не використовується для звичайних користувачів)
         async function savePeople() {
-            showNotification('Збереження даних на GitHub...', 'info');
+            showNotification('Збереження даних...', 'info');
             
-            // Отримуємо токен з форми або збережений
-            const tokenInput = document.getElementById('githubToken');
-            githubToken = tokenInput.value || githubToken;
+            // Для звичайних користувачів просто зберігаємо локально
+            // Для адміністратора з токеном можна реалізувати збереження на GitHub
             
-            if (!githubToken) {
-                showNotification('Помилка: GitHub токен не вказаний. Дані збережено локально.', 'error');
-                localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                return false;
-            }
+            localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+            lastUpdateTime = new Date();
+            updateLastUpdateTime();
+            showNotification('Дані успішно збережено локально!', 'success');
             
-            try {
-                // Спочатку отримуємо поточний файл, щоб отримати SHA
-                const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
-                    headers: {
-                        'Authorization': `token ${githubToken}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                let sha = null;
-                if (getResponse.ok) {
-                    const fileData = await getResponse.json();
-                    sha = fileData.sha;
-                }
-                
-                // Тепер оновлюємо файл
-                const content = btoa(unescape(encodeURIComponent(JSON.stringify({ people: people }, null, 2))));
-                
-                const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${githubToken}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/vnd.github.v3+json'
-                    },
-                    body: JSON.stringify({
-                        message: `Оновлено дані: ${new Date().toLocaleString()}`,
-                        content: content,
-                        sha: sha
-                    })
-                });
-                
-                if (response.ok) {
-                    // Також зберігаємо локально
-                    localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                    lastUpdateTime = new Date();
-                    updateLastUpdateTime();
-                    showNotification('Дані успішно збережено на GitHub!', 'success');
-                    return true;
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Помилка збереження');
-                }
-            } catch (error) {
-                console.error('Помилка збереження:', error);
-                // Зберігаємо локально як запасний варіант
-                localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                showNotification(`Помилка збереження на GitHub: ${error.message}. Дані збережено локально.`, 'error');
-                return false;
-            }
+            // Показуємо повідомлення про те, що дані збережено локально
+            showNotification('Дані збережено локально. Для синхронізації між користувачами потрібен GitHub токен адміністратора.', 'info');
+            
+            return true;
         }
 
         // Функція для завантаження фото на GitHub
         async function uploadImageToGitHub(file, filename) {
+            const githubToken = document.getElementById('githubToken').value;
+            
             if (!githubToken) {
-                const tokenInput = document.getElementById('githubToken');
-                githubToken = tokenInput.value;
-                
-                if (!githubToken) {
-                    throw new Error('GitHub токен не вказаний. Будь ласка, введіть токен у відповідне поле.');
-                }
+                throw new Error('GitHub токен не вказаний. Будь ласка, введіть токен у відповідне поле або використовуйте метод з посиланням.');
             }
             
             // Конвертуємо файл в base64
@@ -883,7 +840,7 @@
             
             people.push(person);
             
-            // Зберігаємо в GitHub
+            // Зберігаємо дані
             const success = await savePeople();
             if (success) {
                 renderPeople();
@@ -902,16 +859,18 @@
             if (name && description && addedByName) {
                 let photo = photoUrl;
                 
-                // Якщо фото не завантажено і не вказано посилання, використовуємо фото за замовчуванням
+                // Перевіряємо обов'язкові поля в залежності від методу
                 if (currentUploadMethod === 'link' && !photoUrl) {
                     showNotification('Будь ласка, введіть посилання на фото з GitHub.', 'error');
                     return;
                 }
                 
-                if (currentUploadMethod === 'file' && !photoFile && !photoUrl) {
-                    photo = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+                if (currentUploadMethod === 'file' && !photoFile) {
+                    showNotification('Будь ласка, виберіть файл для завантаження.', 'error');
+                    return;
                 }
                 
+                // Обробка фото в залежності від методу
                 if (currentUploadMethod === 'file' && photoFile) {
                     // Якщо користувач завантажив файл
                     showNotification('Завантаження фото на GitHub...', 'info');
@@ -925,6 +884,7 @@
                     }
                 }
                 
+                // Додаємо людину
                 addPerson({ name, description, photo, isVip, addedBy: addedByName });
                 resetForm();
             } else {
