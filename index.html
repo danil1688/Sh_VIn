@@ -536,399 +536,340 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Конфігурація Firebase (безкоштовна база даних)
-        const FIREBASE_URL = 'https://vinnytsia-people-default-rtdb.europe-west1.firebasedatabase.app/people.json';
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Локальное хранение данных вместо Firebase
+    let people = [];
+    let lastUpdateTime = null;
+
+    // Початкові дані
+    const initialPeople = [
+        {
+            id: 1,
+            name: "Навроцький",
+            description: "Видатний громадський діяч Вінниці. Зробив великий внесок у розвиток міста та його інфраструктури.",
+            photo: "https://github.com/danil1688/Sh_VIn/blob/main/foto/%D0%BD%D0%B0%D0%B2%D1%80%D0%BE%D1%86%D1%8C%D0%BA%D0%B8%D0%B9.jpg?raw=true",
+            isVip: true,
+            addedBy: "Система",
+            timestamp: new Date().toISOString()
+        },
+        {
+            id: 2,
+            name: "Михайло Коцюбинський",
+            description: "Видатний український письменник, драматург, громадський діяч. Народився у Вінниці та провів тут дитинство.",
+            photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+            isVip: false,
+            addedBy: "Система",
+            timestamp: new Date().toISOString()
+        }
+    ];
+
+    // Функція для завантаження даних
+    async function loadPeople() {
+        showLoadingState(true);
+        showNotification('Завантаження даних...', 'info');
         
-        let people = [];
-        let lastUpdateTime = null;
-
-        // Початкові дані
-        const initialPeople = [
-            {
-                id: 1,
-                name: "Навроцький",
-                description: "Видатний громадський діяч Вінниці. Зробив великий внесок у розвиток міста та його інфраструктури.",
-                photo: "https://github.com/danil1688/Sh_VIn/blob/main/foto/%D0%BD%D0%B0%D0%B2%D1%80%D0%BE%D1%86%D1%8C%D0%BA%D0%B8%D0%B9.jpg?raw=true",
-                isVip: true,
-                addedBy: "Система",
-                timestamp: new Date().toISOString()
-            },
-            {
-                id: 2,
-                name: "Михайло Коцюбинський",
-                description: "Видатний український письменник, драматург, громадський діяч. Народився у Вінниці та провів тут дитинство.",
-                photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
-                isVip: false,
-                addedBy: "Система",
-                timestamp: new Date().toISOString()
-            }
-        ];
-
-        // Функція для завантаження даних з Firebase
-        async function loadPeople() {
-            showLoadingState(true);
-            showNotification('Завантаження даних...', 'info');
+        try {
+            // Используем локальное хранилище
+            const localData = localStorage.getItem('vinnytsiaPeople');
+            people = localData ? JSON.parse(localData) : initialPeople;
             
-            try {
-                const response = await fetch(FIREBASE_URL);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    // Конвертуємо об'єкт в масив
-                    if (data) {
-                        people = Object.values(data);
-                    } else {
-                        people = initialPeople;
-                    }
-                    lastUpdateTime = new Date();
-                    updateLastUpdateTime();
-                    showNotification('Дані успішно завантажено!', 'success');
-                } else {
-                    throw new Error('Помилка завантаження');
-                }
-            } catch (error) {
-                console.error('Помилка завантаження:', error);
-                // Використовуємо локальні дані
-                const localData = localStorage.getItem('vinnytsiaPeople');
-                people = localData ? JSON.parse(localData) : initialPeople;
-                showNotification('Використовуються локальні дані', 'warning');
-            }
+            lastUpdateTime = new Date();
+            updateLastUpdateTime();
+            showNotification('Дані успішно завантажено!', 'success');
+        } catch (error) {
+            console.error('Помилка завантаження:', error);
+            people = initialPeople;
+            showNotification('Використовуються локальні дані', 'warning');
+        }
+        
+        renderPeople();
+        showLoadingState(false);
+    }
+
+    // Функція для збереження даних
+    async function savePeople() {
+        showNotification('Збереження даних...', 'info');
+        
+        try {
+            // Сохраняем в локальное хранилище
+            localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+            lastUpdateTime = new Date();
+            updateLastUpdateTime();
+            showNotification('Дані успішно збережено!', 'success');
+            return true;
+        } catch (error) {
+            console.error('Помилка збереження:', error);
+            showNotification('Помилка збереження', 'error');
+            return false;
+        }
+    }
+
+    // Допоміжна функція для конвертації файлу в base64
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+        });
+    }
+
+    // Функція для відображення стану завантаження
+    function showLoadingState(loading) {
+        const refreshBtn = document.getElementById('refreshBtn');
+        const refreshBtnSmall = document.getElementById('refreshBtnSmall');
+        
+        if (loading) {
+            refreshBtn.innerHTML = '<div class="loading-spinner"></div>Завантаження...';
+            refreshBtnSmall.innerHTML = '<div class="loading-spinner"></div>';
+            refreshBtn.disabled = true;
+            refreshBtnSmall.disabled = true;
+        } else {
+            refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Оновити дані';
+            refreshBtnSmall.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Оновити';
+            refreshBtn.disabled = false;
+            refreshBtnSmall.disabled = false;
+        }
+    }
+
+    // Функція для відображення часу останнього оновлення
+    function updateLastUpdateTime() {
+        const element = document.getElementById('lastUpdate');
+        if (element && lastUpdateTime) {
+            element.textContent = `Останнє оновлення: ${lastUpdateTime.toLocaleTimeString()}`;
+        }
+    }
+
+    // Функція для відображення людей
+    function renderPeople() {
+        const vipContainer = document.getElementById('vip-container');
+        const peopleContainer = document.getElementById('people-container');
+        const emptyState = document.getElementById('empty-state');
+        
+        vipContainer.innerHTML = '';
+        peopleContainer.innerHTML = '';
+        
+        if (people.length === 0) {
+            emptyState.classList.remove('d-none');
+            return;
+        } else {
+            emptyState.classList.add('d-none');
+        }
+        
+        // Відокремлюємо ВІП персону
+        const vipPerson = people.find(person => person.isVip);
+        const otherPeople = people.filter(person => !person.isVip);
+        
+        // Відображаємо ВІП персону
+        if (vipPerson) {
+            const col = document.createElement('div');
+            col.className = 'col-lg-8 col-md-10';
             
+            const card = document.createElement('div');
+            card.className = `person-card vip-person-card`;
+            
+            card.innerHTML = `
+                <div class="position-relative">
+                    <img src="${vipPerson.photo}" class="person-img" alt="${vipPerson.name}" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
+                    <span class="vip-badge">ВІП</span>
+                </div>
+                <div class="person-content">
+                    <h4 class="text-center">${vipPerson.name}</h4>
+                    <p class="text-center">${vipPerson.description}</p>
+                    <div class="text-center">
+                        <small class="text-muted">Додано: ${vipPerson.addedBy}</small>
+                    </div>
+                </div>
+            `;
+            
+            col.appendChild(card);
+            vipContainer.appendChild(col);
+        }
+        
+        // Відображаємо інших людей
+        otherPeople.forEach((person) => {
+            const col = document.createElement('div');
+            col.className = 'col-lg-4 col-md-6';
+            
+            const card = document.createElement('div');
+            card.className = `person-card`;
+            
+            card.innerHTML = `
+                <div class="position-relative">
+                    <img src="${person.photo}" class="person-img" alt="${person.name}" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
+                </div>
+                <div class="person-content">
+                    <h4>${person.name}</h4>
+                    <p>${person.description}</p>
+                    <small class="text-muted">Додано: ${person.addedBy}</small>
+                </div>
+            `;
+            
+            col.appendChild(card);
+            peopleContainer.appendChild(col);
+        });
+    }
+
+    // Функція для додавання нової людини
+    async function addPerson(person) {
+        // Якщо додається нова ВІП персона, знімаємо статус ВІП з інших
+        if (person.isVip) {
+            people.forEach(p => p.isVip = false);
+        }
+        
+        person.id = Date.now();
+        person.timestamp = new Date().toISOString();
+        
+        people.push(person);
+        
+        // Зберігаємо локально
+        const success = await savePeople();
+        if (success) {
             renderPeople();
-            showLoadingState(false);
         }
+    }
 
-        // Функція для збереження даних в Firebase
-        async function savePeople() {
-            showNotification('Збереження даних...', 'info');
+    // Обробник події для форми додавання людини
+    document.getElementById('submitPerson').addEventListener('click', async function() {
+        const name = document.getElementById('personName').value;
+        const description = document.getElementById('personDescription').value;
+        const photoUrl = document.getElementById('personPhotoUrl').value;
+        const isVip = document.getElementById('isVip').checked;
+        const addedByName = document.getElementById('addedByName').value;
+        const photoFile = document.getElementById('personPhotoFile').files[0];
+        
+        if (name && description && addedByName) {
+            let photo = photoUrl;
             
-            try {
-                const response = await fetch(FIREBASE_URL, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(people.reduce((acc, person, index) => {
-                        acc[index] = person;
-                        return acc;
-                    }, {}))
-                });
-                
-                if (response.ok) {
-                    // Також зберігаємо локально
-                    localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                    lastUpdateTime = new Date();
-                    updateLastUpdateTime();
-                    showNotification('Дані успішно збережено! Всі побачать оновлення!', 'success');
-                    return true;
-                } else {
-                    throw new Error('Помилка збереження');
-                }
-            } catch (error) {
-                console.error('Помилка збереження:', error);
-                // Зберігаємо локально
-                localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                showNotification('Дані збережено локально', 'warning');
-                return false;
-            }
-        }
-
-        // Допоміжна функція для конвертації файлу в base64
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        // Функція для відображення стану завантаження
-        function showLoadingState(loading) {
-            const refreshBtn = document.getElementById('refreshBtn');
-            const refreshBtnSmall = document.getElementById('refreshBtnSmall');
-            
-            if (loading) {
-                refreshBtn.innerHTML = '<div class="loading-spinner"></div>Завантаження...';
-                refreshBtnSmall.innerHTML = '<div class="loading-spinner"></div>';
-                refreshBtn.disabled = true;
-                refreshBtnSmall.disabled = true;
-            } else {
-                refreshBtn.innerHTML = '<i class="fas fa-sync-alt me-2"></i>Оновити дані';
-                refreshBtnSmall.innerHTML = '<i class="fas fa-sync-alt me-1"></i>Оновити';
-                refreshBtn.disabled = false;
-                refreshBtnSmall.disabled = false;
-            }
-        }
-
-        // Функція для відображення часу останнього оновлення
-        function updateLastUpdateTime() {
-            const element = document.getElementById('lastUpdate');
-            if (element && lastUpdateTime) {
-                element.textContent = `Останнє оновлення: ${lastUpdateTime.toLocaleTimeString()}`;
-            }
-        }
-
-        // Функція для відображення людей
-        function renderPeople() {
-            const vipContainer = document.getElementById('vip-container');
-            const peopleContainer = document.getElementById('people-container');
-            const emptyState = document.getElementById('empty-state');
-            
-            vipContainer.innerHTML = '';
-            peopleContainer.innerHTML = '';
-            
-            if (people.length === 0) {
-                emptyState.classList.remove('d-none');
-                return;
-            } else {
-                emptyState.classList.add('d-none');
-            }
-            
-            // Відокремлюємо ВІП персону
-            const vipPerson = people.find(person => person.isVip);
-            const otherPeople = people.filter(person => !person.isVip);
-            
-            // Відображаємо ВІП персону
-            if (vipPerson) {
-                const col = document.createElement('div');
-                col.className = 'col-lg-8 col-md-10';
-                
-                const card = document.createElement('div');
-                card.className = `person-card vip-person-card`;
-                
-                card.innerHTML = `
-                    <div class="position-relative">
-                        <img src="${vipPerson.photo}" class="person-img" alt="${vipPerson.name}" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
-                        <span class="vip-badge">ВІП</span>
-                    </div>
-                    <div class="person-content">
-                        <h4 class="text-center">${vipPerson.name}</h4>
-                        <p class="text-center">${vipPerson.description}</p>
-                        <div class="text-center">
-                            <small class="text-muted">Додано: ${vipPerson.addedBy}</small>
-                        </div>
-                    </div>
-                `;
-                
-                col.appendChild(card);
-                vipContainer.appendChild(col);
-            }
-            
-            // Відображаємо інших людей
-            otherPeople.forEach((person) => {
-                const col = document.createElement('div');
-                col.className = 'col-lg-4 col-md-6';
-                
-                const card = document.createElement('div');
-                card.className = `person-card`;
-                
-                card.innerHTML = `
-                    <div class="position-relative">
-                        <img src="${person.photo}" class="person-img" alt="${person.name}" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'">
-                    </div>
-                    <div class="person-content">
-                        <h4>${person.name}</h4>
-                        <p>${person.description}</p>
-                        <small class="text-muted">Додано: ${person.addedBy}</small>
-                    </div>
-                `;
-                
-                col.appendChild(card);
-                peopleContainer.appendChild(col);
-            });
-        }
-
-        // Функція для додавання нової людини
-        async function addPerson(person) {
-            // Якщо додається нова ВІП персона, знімаємо статус ВІП з інших
-            if (person.isVip) {
-                people.forEach(p => p.isVip = false);
-            }
-            
-            person.id = Date.now();
-            person.timestamp = new Date().toISOString();
-            
-            people.push(person);
-            
-            // Зберігаємо в Firebase
-            const success = await savePeople();
-            if (success) {
-                renderPeople();
-            }
-        }
-
-        // Обробник події для форми додавання людини
-        document.getElementById('submitPerson').addEventListener('click', async function() {
-            const name = document.getElementById('personName').value;
-            const description = document.getElementById('personDescription').value;
-            const photoUrl = document.getElementById('personPhotoUrl').value;
-            const isVip = document.getElementById('isVip').checked;
-            const addedByName = document.getElementById('addedByName').value;
-            const photoFile = document.getElementById('personPhotoFile').files[0];
-            
-            if (name && description && addedByName) {
-                let photo = photoUrl;
-                
-                // Якщо користувач завантажив файл
-                if (photoFile) {
-                    try {
-                        // Завантажуємо фото на ImgBB
-                        photo = await uploadImageToImgBB(photoFile);
-                    } catch (error) {
-                        console.error('Помилка завантаження фото:', error);
-                        // Якщо не вдалося завантажити, використовуємо base64
-                        photo = await fileToBase64(photoFile);
-                        showNotification('Фото збережено локально. Для публічного доступу використовуйте ImgBB.', 'warning');
-                    }
-                }
-                
-                // Якщо немає фото, використовуємо фото за замовчуванням
-                if (!photoFile && !photoUrl) {
+            // Якщо користувач завантажив файл
+            if (photoFile) {
+                try {
+                    // Используем base64 для локального хранения
+                    photo = await fileToBase64(photoFile);
+                    showNotification('Фото збережено локально', 'success');
+                } catch (error) {
+                    console.error('Помилка завантаження фото:', error);
                     photo = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
-                }
-                
-                addPerson({ name, description, photo, isVip, addedBy: addedByName });
-                resetForm();
-            } else {
-                showNotification('Будь ласка, заповніть всі обов\'язкові поля.', 'error');
-            }
-        });
-
-        function resetForm() {
-            document.getElementById('addPersonForm').reset();
-            document.getElementById('previewImage').style.display = 'none';
-            const modal = bootstrap.Modal.getInstance(document.getElementById('addPersonModal'));
-            modal.hide();
-        }
-
-        // Функція для показу сповіщень
-        function showNotification(message, type) {
-            const notification = document.getElementById('syncNotification');
-            const messageElement = document.getElementById('syncMessage');
-            messageElement.textContent = message;
-            
-            notification.style.background = 
-                type === 'success' ? 'var(--primary-color)' : 
-                type === 'error' ? '#dc3545' : 
-                type === 'info' ? '#17a2b8' : '#ffc107';
-            
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 5000);
-        }
-
-        // Drag and drop функціонал
-        const fileUploadContainer = document.getElementById('fileUploadContainer');
-        
-        fileUploadContainer.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            fileUploadContainer.classList.add('dragover');
-        });
-        
-        fileUploadContainer.addEventListener('dragleave', function() {
-            fileUploadContainer.classList.remove('dragover');
-        });
-        
-        fileUploadContainer.addEventListener('drop', function(e) {
-            e.preventDefault();
-            fileUploadContainer.classList.remove('dragover');
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                const file = files[0];
-                if (file.type.startsWith('image/')) {
-                    document.getElementById('personPhotoFile').files = files;
-                    
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const previewImage = document.getElementById('previewImage');
-                        previewImage.src = e.target.result;
-                        previewImage.style.display = 'block';
-                    };
-                    reader.readAsDataURL(file);
-                } else {
-                    showNotification('Будь ласка, виберіть файл зображення.', 'error');
+                    showNotification('Помилка завантаження фото. Використано стандартне зображення.', 'warning');
                 }
             }
-        });
+            
+            // Якщо немає фото, використовуємо фото за замовчуванням
+            if (!photoFile && !photoUrl) {
+                photo = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+            }
+            
+            addPerson({ name, description, photo, isVip, addedBy: addedByName });
+            resetForm();
+        } else {
+            showNotification('Будь ласка, заповніть всі обов\'язкові поля.', 'error');
+        }
+    });
 
-        // ОБНОВЛЕННЫЕ ОБРАБОТЧИКИ ДЛЯ КНОПКИ ЗАГРУЗКИ ФОТО
-        document.getElementById('browseFilesBtn').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            document.getElementById('personPhotoFile').click();
-        });
+    function resetForm() {
+        document.getElementById('addPersonForm').reset();
+        document.getElementById('previewImage').style.display = 'none';
+        const modal = bootstrap.Modal.getInstance(document.getElementById('addPersonModal'));
+        modal.hide();
+    }
 
-        document.getElementById('personPhotoFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Проверяем размер файла (макс. 5MB)
-                if (file.size > 5 * 1024 * 1024) {
-                    showNotification('Файл слишком большой. Максимальный размер: 5MB', 'error');
-                    return;
-                }
+    // Функція для показу сповіщень
+    function showNotification(message, type) {
+        const notification = document.getElementById('syncNotification');
+        const messageElement = document.getElementById('syncMessage');
+        messageElement.textContent = message;
+        
+        notification.style.background = 
+            type === 'success' ? 'var(--primary-color)' : 
+            type === 'error' ? '#dc3545' : 
+            type === 'info' ? '#17a2b8' : '#ffc107';
+        
+        notification.style.display = 'block';
+        
+        setTimeout(() => {
+            notification.style.display = 'none';
+        }, 5000);
+    }
+
+    // Обробники подій для завантаження файлів
+    document.getElementById('browseFilesBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        document.getElementById('personPhotoFile').click();
+    });
+    
+    document.getElementById('personPhotoFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Проверяем размер файла (макс. 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('Файл слишком большой. Максимальный размер: 5MB', 'error');
+                return;
+            }
+            
+            // Проверяем тип файла
+            if (!file.type.startsWith('image/')) {
+                showNotification('Пожалуйста, выберите файл изображения', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const previewImage = document.getElementById('previewImage');
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
                 
-                // Проверяем тип файла
-                if (!file.type.startsWith('image/')) {
-                    showNotification('Пожалуйста, выберите файл изображения', 'error');
-                    return;
-                }
+                // Показываем сообщение об успешной загрузке
+                showNotification('Фото успешно загружено для предпросмотра', 'success');
+            };
+            reader.onerror = function() {
+                showNotification('Ошибка при чтении файла', 'error');
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Drag and drop функціонал
+    const fileUploadContainer = document.getElementById('fileUploadContainer');
+    
+    fileUploadContainer.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        fileUploadContainer.classList.add('dragover');
+    });
+    
+    fileUploadContainer.addEventListener('dragleave', function() {
+        fileUploadContainer.classList.remove('dragover');
+    });
+    
+    fileUploadContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        fileUploadContainer.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+                document.getElementById('personPhotoFile').files = files;
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const previewImage = document.getElementById('previewImage');
                     previewImage.src = e.target.result;
                     previewImage.style.display = 'block';
-                    
-                    // Показываем сообщение об успешной загрузке
-                    showNotification('Фото успешно загружено для предпросмотра', 'success');
-                };
-                reader.onerror = function() {
-                    showNotification('Ошибка при чтении файла', 'error');
                 };
                 reader.readAsDataURL(file);
-            }
-        });
-
-        // Улучшенная функция загрузки на ImgBB
-        async function uploadImageToImgBB(file) {
-            showNotification('Загрузка фото на сервер...', 'info');
-            
-            // Ваш собственный API ключ от ImgBB
-            const API_KEY = 'f2c8aad0eafa38b909ee6ba2fd9a8694';
-            
-            const formData = new FormData();
-            formData.append('image', file);
-            
-            try {
-                const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    showNotification('Фото успешно загружено на сервер!', 'success');
-                    return data.data.url;
-                } else {
-                    throw new Error(`Ошибка сервера: ${response.status}`);
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки фото:', error);
-                showNotification('Не удалось загрузить фото на сервер. Используется локальная версия.', 'warning');
-                return await fileToBase64(file);
+            } else {
+                showNotification('Будь ласка, виберіть файл зображення.', 'error');
             }
         }
+    });
 
-        // Завантажуємо дані при завантаженні сторінки
-        document.addEventListener('DOMContentLoaded', function() {
-            loadPeople();
-        });
-    </script>
+    // Завантажуємо дані при завантаженні сторінки
+    document.addEventListener('DOMContentLoaded', function() {
+        loadPeople();
+    });
+</script>
 </body>
 </html>
+
