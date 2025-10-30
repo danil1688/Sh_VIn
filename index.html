@@ -359,13 +359,21 @@
             border-color: var(--primary-color);
         }
         
-        .auto-upload-info {
-            background: rgba(40, 167, 69, 0.1);
-            border: 1px solid rgba(40, 167, 69, 0.3);
+        .file-method-info {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.3);
             border-radius: 5px;
             padding: 10px;
             margin-top: 10px;
             font-size: 0.9rem;
+        }
+        
+        .admin-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            border-left: 4px solid var(--primary-color);
         }
     </style>
 </head>
@@ -429,7 +437,7 @@
                 <div class="row">
                     <div class="col-lg-8 mx-auto text-center">
                         <p class="lead">"Шлюхи Вінниці" - це спільна платформа, де кожен може додати інформацію про видатних особистостей нашого міста.</p>
-                        <p><strong>Увага:</strong> Всі додані шлюхи з'являться у всіх користувачів сайту!</p>
+                        <p><strong>Увага:</strong> Для того щоб фото було видно всім, використовуйте метод з посиланням на GitHub!</p>
                         <div class="mt-4">
                             <button class="btn btn-outline-light me-2" onclick="loadPeople()" id="refreshBtnSmall">
                                 <i class="fas fa-sync-alt me-1"></i>Оновити
@@ -559,7 +567,7 @@
                                     </ol>
                                 </div>
                                 <div class="form-text mt-3">Посилання на фото з GitHub:</div>
-                                <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/username/repo/blob/main/foto/photo.jpg?raw=true">
+                                <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/danil1688/Sh_VIn/blob/main/foto/photo.jpg?raw=true">
                             </div>
                             
                             <!-- Метод 2: Завантаження файлу -->
@@ -572,8 +580,8 @@
                                     <img id="previewImage" class="preview-image" alt="Попередній перегляд">
                                 </div>
                                 
-                                <div class="auto-upload-info">
-                                    <p><strong>Фото буде автоматично завантажено на GitHub та доступне всім користувачам!</strong></p>
+                                <div class="file-method-info">
+                                    <p><strong>Увага:</strong> Фото буде збережено локально і буде видно тільки на вашому пристрої. Для того щоб фото було видно всім, використовуйте метод з посиланням на GitHub.</p>
                                 </div>
                             </div>
                         </div>
@@ -589,6 +597,20 @@
                             <label for="addedByName" class="form-label">Ваше ім'я *</label>
                             <input type="text" class="form-control" id="addedByName" required placeholder="Хто додає цю людину?">
                         </div>
+
+                        <!-- Інструкції для адміністратора -->
+                        <div class="admin-section">
+                            <h6><i class="fas fa-tools me-2"></i>Для адміністратора:</h6>
+                            <p class="mb-2">Щоб дані були доступні всім користувачам:</p>
+                            <ol class="small">
+                                <li>Завантажте файл <code>data.json</code> з цієї сторінки</li>
+                                <li>Завантажте його у ваш репозиторій GitHub у папку <code>data/</code></li>
+                                <li>Оновіть посилання у коді на ваше посилання GitHub Pages</li>
+                            </ol>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="downloadData()">
+                                <i class="fas fa-download me-1"></i>Завантажити data.json
+                            </button>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
@@ -603,19 +625,20 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Конфігурація GitHub
-        const GITHUB_USERNAME = 'danil1688'; // Замініть на ваш GitHub username
-        const GITHUB_REPO = 'Sh_VIn'; // Замініть на назву вашого репозиторію
-        const DATA_FILE_PATH = 'data/people.json'; // Шлях до файлу з даними в репозиторії
+        // Конфігурація GitHub (для читання даних)
+        const GITHUB_USERNAME = 'danil1688';
+        const GITHUB_REPO = 'Sh_VIn';
         
-        // Спільний GitHub Token для всіх користувачів
-        const SHARED_GITHUB_TOKEN = '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';
+        // Посилання на дані (замініть на ваше посилання GitHub Pages)
+        const DATA_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/data/data.json`;
+        // Або використовуйте локальні дані:
+        // const DATA_URL = 'data/data.json';
         
         let people = [];
         let lastUpdateTime = null;
         let currentUploadMethod = 'link';
 
-        // Початкові дані з фото з вашого GitHub
+        // Початкові дані
         const initialPeople = [
             {
                 id: 1,
@@ -637,26 +660,26 @@
             }
         ];
 
-        // Функція для завантаження даних з GitHub
+        // Функція для завантаження даних
         async function loadPeople() {
             showLoadingState(true);
-            showNotification('Завантаження даних з GitHub...', 'info');
+            showNotification('Завантаження даних...', 'info');
             
             try {
-                const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/${DATA_FILE_PATH}?t=${Date.now()}`);
+                const response = await fetch(`${DATA_URL}?t=${Date.now()}`);
                 
                 if (response.ok) {
                     const data = await response.json();
                     people = data.people || initialPeople;
                     lastUpdateTime = new Date();
                     updateLastUpdateTime();
-                    showNotification('Дані успішно завантажено з GitHub!', 'success');
+                    showNotification('Дані успішно завантажено!', 'success');
                 } else {
-                    throw new Error('Помилка завантаження з GitHub');
+                    throw new Error('Помилка завантаження даних');
                 }
             } catch (error) {
                 console.error('Помилка завантаження:', error);
-                // Використовуємо локальні дані як запасний варіант
+                // Використовуємо локальні дані
                 const localData = localStorage.getItem('vinnytsiaPeople');
                 people = localData ? JSON.parse(localData) : initialPeople;
                 showNotification('Використовуються локальні дані', 'warning');
@@ -666,100 +689,30 @@
             showLoadingState(false);
         }
 
-        // Функція для збереження даних в GitHub
+        // Функція для збереження даних
         async function savePeople() {
-            showNotification('Збереження даних на GitHub...', 'info');
+            showNotification('Збереження даних...', 'info');
             
-            try {
-                // Спочатку отримуємо поточний файл, щоб отримати SHA
-                const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
-                    headers: {
-                        'Authorization': `token ${SHARED_GITHUB_TOKEN}`,
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-                
-                let sha = null;
-                if (getResponse.ok) {
-                    const fileData = await getResponse.json();
-                    sha = fileData.sha;
-                }
-                
-                // Тепер оновлюємо файл
-                const content = btoa(unescape(encodeURIComponent(JSON.stringify({ people: people }, null, 2))));
-                
-                const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${SHARED_GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/vnd.github.v3+json'
-                    },
-                    body: JSON.stringify({
-                        message: `Оновлено дані: ${new Date().toLocaleString()}`,
-                        content: content,
-                        sha: sha
-                    })
-                });
-                
-                if (response.ok) {
-                    // Також зберігаємо локально
-                    localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                    lastUpdateTime = new Date();
-                    updateLastUpdateTime();
-                    showNotification('Дані успішно збережено на GitHub!', 'success');
-                    return true;
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Помилка збереження');
-                }
-            } catch (error) {
-                console.error('Помилка збереження:', error);
-                // Зберігаємо локально як запасний варіант
-                localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                showNotification(`Помилка збереження на GitHub: ${error.message}. Дані збережено локально.`, 'error');
-                return false;
-            }
+            // Зберігаємо локально
+            localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+            lastUpdateTime = new Date();
+            updateLastUpdateTime();
+            showNotification('Дані успішно збережено локально!', 'success');
+            
+            return true;
         }
 
-        // Функція для завантаження фото на GitHub
-        async function uploadImageToGitHub(file) {
-            showNotification('Завантаження фото на GitHub...', 'info');
-            
-            // Генеруємо унікальне ім'я файлу
-            const fileExtension = file.name.split('.').pop();
-            const filename = `photo_${Date.now()}.${fileExtension}`;
-            
-            try {
-                // Конвертуємо файл в base64
-                const base64Content = await fileToBase64(file);
-                
-                const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/foto/${filename}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `token ${SHARED_GITHUB_TOKEN}`,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/vnd.github.v3+json'
-                    },
-                    body: JSON.stringify({
-                        message: `Додано фото: ${filename}`,
-                        content: base64Content.split(',')[1] // Видаляємо префікс data:image/...;base64,
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const photoUrl = `https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/blob/main/foto/${filename}?raw=true`;
-                    showNotification('Фото успішно завантажено на GitHub!', 'success');
-                    return photoUrl;
-                } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Помилка завантаження фото на GitHub');
-                }
-            } catch (error) {
-                console.error('Помилка завантаження фото:', error);
-                throw new Error(`Помилка завантаження фото: ${error.message}`);
-            }
+        // Функція для завантаження файлу даних
+        function downloadData() {
+            const dataStr = JSON.stringify({ people: people }, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('Файл data.json завантажено!', 'success');
         }
 
         // Допоміжна функція для конвертації файлу в base64
@@ -880,7 +833,7 @@
             
             people.push(person);
             
-            // Зберігаємо в GitHub
+            // Зберігаємо дані
             const success = await savePeople();
             if (success) {
                 renderPeople();
@@ -912,12 +865,13 @@
                 
                 // Обробка фото в залежності від методу
                 if (currentUploadMethod === 'file' && photoFile) {
-                    // Якщо користувач завантажив файл - завантажуємо на GitHub
+                    // Якщо користувач завантажив файл - конвертуємо в base64
+                    showNotification('Обробка фото...', 'info');
                     try {
-                        photo = await uploadImageToGitHub(photoFile);
+                        photo = await fileToBase64(photoFile);
                     } catch (error) {
-                        console.error('Помилка завантаження фото:', error);
-                        showNotification(`Помилка завантаження фото: ${error.message}`, 'error');
+                        console.error('Помилка обробки фото:', error);
+                        showNotification('Помилка обробки фото', 'error');
                         return;
                     }
                 }
