@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Люди Вінниці - Видатні особистості нашого міста</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6d28d9;
+            --secondary-color: #ec4899;
+            --accent-color: #8b5cf6;
+            --dark-bg: #0f0f23;
+            --darker-bg: #0a0a18;
+            --card-bg: #1a1a2e;
+            --text-color: #e2e8f0;
+            --text-muted: #94a3b8;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        main {
+            flex: 1;
+        }
+        
+        /* Анімація градієнта для фону */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .animated-bg {
+            background: linear-gradient(-45deg, #0f0f23, #1a1a2e, #16213e, #0f3460);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        .hero-section {
+            color: white;
+            padding: 120px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%236d28d9" fill-opacity="0.1" d="M0,224L48,213.3C96,203,192,181,288,181.3C384,181,480,203,576,192C672,181,768,139,864,128C960,117,1056,139,1152,149.3C1248,160,1344,160,1392,160L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Анімація для тексту героя */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .hero-title {
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        .hero-subtitle {
+            animation: fadeInUp 1s ease-out 0.3s both;
+        }
+        
+        .hero-btn {
+            animation: fadeInUp 1s ease-out 0.6s both;
+        }
+        
+        .section-title {
+            position: relative;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--secondary-color);
+            border-radius: 2px;
+        }
+        
+        /* Анімації для карток */
+        .person-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.05);
+            position: relative;
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+        }
+        
+        .person-card.visible {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+        
+        .person-card:hover {
+            transform: translateY(-15px) scale(1.03);
+            box-shadow: 0 20px 40px rgba(109, 40, 217, 0.3);
+            border-color: rgba(109, 40, 217, 0.3);
+        }
+        
+        /* Ефект світіння для картки при наведенні */
+        .person-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 15px;
+            padding: 2px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        .person-card:hover::before {
+            opacity: 1;
+        }
+        
+        .vip-person-card {
+            transform: scale(1.05);
+            border: 2px solid var(--secondary-color);
+            z-index: 10;
+            position: relative;
+        }
+        
+        .vip-person-card:hover {
+            transform: scale(1.05) translateY(-15px);
+        }
+        
+        .person-img {
+            height: 250px;
+            width: 100%;
+            object-fit: cover;
+            transition: all 0.7s ease;
+            filter: grayscale(0.3);
+        }
+        
+        .person-card:hover .person-img {
+            transform: scale(1.1);
+            filter: grayscale(0);
+        }
+        
+        .person-content {
+            padding: 25px;
+        }
+        
+        .vip-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(45deg, var(--secondary-color), var(--accent-color));
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.4);
+            z-index: 2;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Анімація пульсації для ВІП бейджа */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(236, 72, 153, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(236, 72, 153, 0);
+            }
+        }
+        
+        .add-person-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 35px;
+            font-weight: bold;
+            transition: all 0.4s ease;
+            box-shadow: 0 5px 20px rgba(109, 40, 217, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .add-person-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .add-person-btn:hover::before {
+            left: 100%;
+        }
+        
+        .add-person-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(109, 40, 217, 0.6);
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+        
+        .modal-header {
+            background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+            border-bottom: none;
+        }
+        
+        .btn-close {
+            filter: invert(1);
+        }
+        
+        .form-control, .form-control:focus {
+            background-color: var(--darker-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-color);
+        }
+        
+        .form-control:focus {
+            box-shadow: 0 0 0 0.25rem rgba(109, 40, 217, 0.25);
+            border-color: var(--primary-color);
+        }
+        
+        .footer {
+            background: var(--darker-bg);
+            color: var(--text-color);
+            padding: 60px 0 30px;
+            margin-top: 80px;
+            position: relative;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+        }
+        
+        .footer h4, .footer h5 {
+            color: white;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .footer a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        
+        .footer a:hover {
+            color: var(--secondary-color);
+        }
+        
+        .footer ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer .text-light {
+            color: var(--text-color) !important;
+        }
+        
+        /* Анімація для плаваючих елементів */
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+        
+        .floating {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .file-upload-container {
+            border: 2px dashed rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.03);
+        }
+        
+        .file-upload-container:hover {
+            border-color: var(--primary-color);
+            background: rgba(109, 40, 217, 0.05);
+        }
+        
+        .file-upload-container.dragover {
+            border-color: var(--secondary-color);
+            background: rgba(236, 72, 153, 0.1);
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 200px;
+            margin-top: 15px;
+            border-radius: 10px;
+            display: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .vip-section {
+            background: linear-gradient(135deg, rgba(109,40,217,0.1), rgba(236,72,153,0.1));
+            padding: 50px 0;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .vip-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(109,40,217,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 40px;
+            color: var(--text-muted);
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 15px;
+            background: rgba(255,255,255,0.02);
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+        
+        /* Анімація для навігації */
+        .navbar {
+            transition: all 0.4s ease;
+            background: rgba(15, 15, 35, 0.95) !important;
+            backdrop-filter: blur(10px);
+        }
+        
+        .navbar-brand {
+            font-weight: bold;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        
+        /* Анімація для іконок */
+        .fas, .fab {
+            transition: transform 0.3s ease;
+        }
+        
+        .nav-link:hover .fas,
+        .nav-link:hover .fab {
+            transform: scale(1.2);
+        }
+        
+        /* Анімація для заголовків секцій */
+        .section-title {
+            overflow: hidden;
+        }
+        
+        .section-title h2 {
+            display: inline-block;
+            position: relative;
+        }
+        
+        .section-title h2::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            animation: expandWidth 1.5s ease-out 0.5s forwards;
+        }
+        
+        @keyframes expandWidth {
+            to {
+                width: 100%;
+            }
+        }
+        
+        /* Партиклі */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(109, 40, 217, 0.5);
+            animation: float 15s infinite linear;
+        }
+        
+        /* Анімація для форми */
+        .form-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control {
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus + .form-label {
+            color: var(--primary-color);
+            transform: translateY(-5px);
+        }
+        
+        /* Анімація появи елементів при скролі */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Спеціальні ефекти для тексту */
+        .glow-text {
+            text-shadow: 0 0 10px rgba(109, 40, 217, 0.7);
+        }
+        
+        /* Додаткові стилі для покращення видимості футера */
+        .footer-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .footer hr {
+            opacity: 0.2;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body class="animated-bg">
+    <!-- Навігація -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-users me-2"></i>
+                Шлюхи Вінниці
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about"><i class="fas fa-info-circle me-1"></i> Про проект</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#people"><i class="fas fa-user-friends me-1"></i> Шлюхи</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#add"><i class="fas fa-plus-circle me-1"></i> Додати шлюху</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact"><i class="fas fa-envelope me-1"></i> Контакти</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Герой секція -->
+        <section class="hero-section">
+            <div class="particles" id="particles"></div>
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 hero-content">
+                        <h1 class="display-4 fw-bold mb-4 hero-title glow-text">Видатні шлюхи Вінниці</h1>
+                        <p class="lead mb-4 hero-subtitle">Відкрийте для себе видатних шлюх, які зробили внесок у розвиток нашого міста та прославили його на весь світ.</p>
+                        <a href="#people" class="btn btn-light btn-lg px-4 py-3 hero-btn floating">
+                            <i class="fas fa-arrow-down me-2"></i>Дізнатися більше
+                        </a>
+                    </div>
+                    <div class="col-lg-6 text-center">
+                        <img src="foto/vinitsia.jpg" alt="Люди Вінниці" class="img-fluid rounded shadow-lg floating" style="animation-delay: 0.5s;">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Секція про проект -->
+        <section id="about" class="py-5">
+            <div class="container">
+                <div class="section-title" data-aos="fade-up">
+                    <h2>Про наш проект</h2>
+                </div>
+                <div class="row">
+                    <div class="col-lg-8 mx-auto text-center" data-aos="fade-up" data-aos-delay="200">
+                        <p class="lead">"Шлюхи Вінниці" - це інтерактивна платформа, присвячена видатним особистостям, пов'язаним з нашим містом. Ми збираємо інформацію про шлюх, які зробили значний внесок у розвиток Вінниці в різних сферах: культура, мистецтво, наука, спорт, бізнес та ін.</p>
+                        <p>Кожен може допомогти нам розширити цю колекцію, додавши інформацію про шлюху, яка, на вашу думку, заслуговує на увагу.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Секція з людьми -->
+        <section id="people" class="py-5">
+            <div class="container">
+                <div class="section-title" data-aos="fade-up">
+                    <h2>Наші видатні шлюхи</h2>
+                </div>
+                
+                <!-- ВІП персона -->
+                <div class="vip-section" data-aos="fade-up">
+                    <h3 class="text-center mb-4 glow-text">Особлива ВІП персона</h3>
+                    <div class="row justify-content-center" id="vip-container">
+                        <!-- ВІП персона буде тут -->
+                    </div>
+                </div>
+                
+                <!-- Інші люди -->
+                <h3 class="text-center mb-4" data-aos="fade-up">Інші видатні шлюхи</h3>
+                <div class="row" id="people-container">
+                    <!-- Інші люди будуть тут -->
+                </div>
+                
+                <!-- Повідомлення, якщо немає людей -->
+                <div class="empty-state d-none" id="empty-state" data-aos="fade-up">
+                    <i class="fas fa-users"></i>
+                    <h4>Поки що немає доданих шлюх</h4>
+                    <p>Будьте першим, хто додасть видатну шлюху Вінниці!</p>
+                    <button class="btn add-person-btn mt-3" data-bs-toggle="modal" data-bs-target="#addPersonModal">
+                        <i class="fas fa-plus me-2"></i>Додати першу шлюху
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Секція додавання людини -->
+        <section id="add" class="py-5">
+            <div class="container text-center">
+                <div class="section-title" data-aos="fade-up">
+                    <h2>Додати нову шлюху</h2>
+                </div>
+                <p class="mb-4" data-aos="fade-up" data-aos-delay="200">Знаєте шлюху, яка заслуговує бути в нашій колекції? Додайте її!</p>
+                <button class="btn add-person-btn" data-bs-toggle="modal" data-bs-target="#addPersonModal" data-aos="zoom-in" data-aos-delay="400">
+                    <i class="fas fa-plus me-2"></i>Додати шлюху
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="row">
+                <div class="col-md-6" data-aos="fade-up">
+                    <h4>Шлюхи Вінниці</h4>
+                    <p>Проект присвячений видатним особистостям нашого міста. Ми збираємо та зберігаємо інформацію про шлюх, які зробили значний внесок у розвиток Вінниці.</p>
+                </div>
+                <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                    <h5>Навігація</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#about" class="text-light">Про проект</a></li>
+                        <li><a href="#people" class="text-light">Шлюхи</a></li>
+                        <li><a href="#add" class="text-light">Додати шлюху</a></li>
+                        <li><a href="#contact" class="text-light">Контакти</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3" id="contact" data-aos="fade-up" data-aos-delay="200">
+                    <h5>Контакти</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope me-2"></i> info@vinnytsia-people.com</li>
+                        <li><i class="fas fa-phone me-2"></i> +38 (068) 14-88-52</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i> м. Вінниця, вул. Соборна, 1</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center" data-aos="fade-up">
+                <p>&copy; 2025 Шлюхи Вінниці. Прав немає.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальне вікно для додавання людини -->
+    <div class="modal fade" id="addPersonModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Додати нову шлюху</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addPersonForm">
+                        <div class="mb-3">
+                            <label for="personName" class="form-label">Повне ім'я</label>
+                            <input type="text" class="form-control" id="personName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="personDescription" class="form-label">Опис та досягнення</label>
+                            <textarea class="form-control" id="personDescription" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Фотографія</label>
+                            <div class="file-upload-container" id="fileUploadContainer">
+                                <i class="fas fa-cloud-upload-alt fa-2x mb-3 text-muted"></i>
+                                <p class="mb-2">Перетягніть фото сюди або</p>
+                                <button type="button" class="btn btn-outline-primary" id="browseFilesBtn">Обрати файл</button>
+                                <input type="file" id="personPhotoFile" accept="image/*" class="d-none">
+                                <img id="previewImage" class="preview-image" alt="Попередній перегляд">
+                            </div>
+                            <div class="form-text">Або введіть посилання на фото:</div>
+                            <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://example.com/photo.jpg">
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="isVip">
+                            <label class="form-check-label" for="isVip">
+                                ВІП персона (виділити особливим чином)
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Скасувати</button>
+                    <button type="button" class="btn add-person-btn" id="submitPerson">Додати шлюху</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Ініціалізація AOS
+        AOS.init({
+            duration: 1000,
+            once: true,
+            offset: 100
+        });
+
+        // Початкові дані про людей
+        const initialPeople = [
+            {
+                id: 1,
+                name: "Артем Навроцький",
+                description: "Порно Зірка міста Дніпропетровськ і почесний хуесос міста Вінниця а також улюблений пупсик своєї групи",
+                photo: "foto/навроцький.jpg",
+                isVip: true
+            },
+        ];
+
+        // Завантаження даних з localStorage або використання початкових
+        let people = JSON.parse(localStorage.getItem('vinnytsiaPeople')) || initialPeople;
+
+        // Функція для відображення людей
+        function renderPeople() {
+            const vipContainer = document.getElementById('vip-container');
+            const peopleContainer = document.getElementById('people-container');
+            const emptyState = document.getElementById('empty-state');
+            
+            vipContainer.innerHTML = '';
+            peopleContainer.innerHTML = '';
+            
+            // Перевіряємо, чи є взагалі люди
+            if (people.length === 0) {
+                emptyState.classList.remove('d-none');
+                return;
+            } else {
+                emptyState.classList.add('d-none');
+            }
+            
+            // Відокремлюємо ВІП персону
+            const vipPerson = people.find(person => person.isVip);
+            const otherPeople = people.filter(person => !person.isVip);
+            
+            // Відображаємо ВІП персону
+            if (vipPerson) {
+                const col = document.createElement('div');
+                col.className = 'col-lg-8 col-md-10';
+                col.setAttribute('data-aos', 'zoom-in');
+                
+                const card = document.createElement('div');
+                card.className = `person-card vip-person-card`;
+                
+                card.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${vipPerson.photo}" class="person-img" alt="${vipPerson.name}">
+                        <span class="vip-badge">ВІП</span>
+                    </div>
+                    <div class="person-content">
+                        <h4 class="text-center">${vipPerson.name}</h4>
+                        <p class="text-center">${vipPerson.description}</p>
+                    </div>
+                `;
+                
+                col.appendChild(card);
+                vipContainer.appendChild(col);
+                
+                // Додаємо анімацію появи
+                setTimeout(() => {
+                    card.classList.add('visible');
+                }, 300);
+            }
+            
+            // Відображаємо інших людей
+            otherPeople.forEach((person, index) => {
+                const col = document.createElement('div');
+                col.className = 'col-lg-4 col-md-6';
+                col.setAttribute('data-aos', 'fade-up');
+                col.setAttribute('data-aos-delay', (index % 3) * 100);
+                
+                const card = document.createElement('div');
+                card.className = `person-card`;
+                
+                card.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${person.photo}" class="person-img" alt="${person.name}">
+                    </div>
+                    <div class="person-content">
+                        <h4>${person.name}</h4>
+                        <p>${person.description}</p>
+                    </div>
+                `;
+                
+                col.appendChild(card);
+                peopleContainer.appendChild(col);
+                
+                // Додаємо анімацію появи
+                setTimeout(() => {
+                    card.classList.add('visible');
+                }, 500 + (index * 100));
+            });
+        }
+
+        // Функція для додавання нової людини
+        function addPerson(person) {
+            // Якщо додається нова ВІП персона, знімаємо статус ВІП з інших
+            if (person.isVip) {
+                people.forEach(p => p.isVip = false);
+            }
+            
+            person.id = Date.now(); // Генеруємо унікальний ID
+            people.push(person);
+            localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+            renderPeople();
+        }
+
+        // Обробник події для форми додавання людини
+        document.getElementById('submitPerson').addEventListener('click', function() {
+            const name = document.getElementById('personName').value;
+            const description = document.getElementById('personDescription').value;
+            const photoUrl = document.getElementById('personPhotoUrl').value;
+            const isVip = document.getElementById('isVip').checked;
+            const photoFile = document.getElementById('personPhotoFile').files[0];
+            
+            if (name && description) {
+                let photo = photoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+                
+                // Якщо вибрано файл, конвертуємо його в base64
+                if (photoFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photo = e.target.result;
+                        addPerson({ name, description, photo, isVip });
+                        
+                        // Очищаємо форму
+                        document.getElementById('addPersonForm').reset();
+                        document.getElementById('previewImage').style.display = 'none';
+                        
+                        // Закриваємо модальне вікно
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addPersonModal'));
+                        modal.hide();
+                        
+                        // Показуємо повідомлення про успіх
+                        showNotification('Людину успішно додано!', 'success');
+                    };
+                    reader.readAsDataURL(photoFile);
+                } else {
+                    addPerson({ name, description, photo, isVip });
+                    
+                    // Очищаємо форму
+                    document.getElementById('addPersonForm').reset();
+                    document.getElementById('previewImage').style.display = 'none';
+                    
+                    // Закриваємо модальне вікно
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addPersonModal'));
+                    modal.hide();
+                    
+                    // Показуємо повідомлення про успіх
+                    showNotification('Людину успішно додано!', 'success');
+                }
+            } else {
+                showNotification('Будь ласка, заповніть обов\'язкові поля: ім\'я та опис.', 'error');
+            }
+        });
+
+        // Функція для показу сповіщень
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.style.minWidth = '300px';
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Видаляємо сповіщення через 3 секунди
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Обробники подій для завантаження файлів
+        document.getElementById('browseFilesBtn').addEventListener('click', function() {
+            document.getElementById('personPhotoFile').click();
+        });
+        
+        document.getElementById('personPhotoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Drag and drop функціонал
+        const fileUploadContainer = document.getElementById('fileUploadContainer');
+        
+        fileUploadContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            fileUploadContainer.classList.add('dragover');
+        });
+        
+        fileUploadContainer.addEventListener('dragleave', function() {
+            fileUploadContainer.classList.remove('dragover');
+        });
+        
+        fileUploadContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            fileUploadContainer.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    document.getElementById('personPhotoFile').files = files;
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const previewImage = document.getElementById('previewImage');
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    showNotification('Будь ласка, виберіть файл зображення.', 'error');
+                }
+            }
+        });
+
+        // Створення партиклів
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Випадкові властивості
+                const size = Math.random() * 5 + 2;
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const delay = Math.random() * 15;
+                const duration = Math.random() * 10 + 10;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${posX}%`;
+                particle.style.top = `${posY}%`;
+                particle.style.animationDelay = `${delay}s`;
+                particle.style.animationDuration = `${duration}s`;
+                particle.style.opacity = Math.random() * 0.5 + 0.2;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Ініціалізація при завантаженні сторінки
+        document.addEventListener('DOMContentLoaded', function() {
+            renderPeople();
+            createParticles();
+        });
+    </script>
+</body>
+</html>
