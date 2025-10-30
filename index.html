@@ -904,6 +904,40 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadPeople();
         });
+        // Добавь в конфигурацию
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyC...",
+    authDomain: "your-project.firebaseapp.com",
+    projectId: "your-project",
+    storageBucket: "your-project.appspot.com",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
+};
+
+// Инициализация Firebase
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js';
+
+const app = initializeApp(FIREBASE_CONFIG);
+const storage = getStorage(app);
+
+// Функция загрузки фото в Firebase Storage
+async function uploadImageToFirebase(file) {
+    showNotification('Завантаження фото...', 'info');
+    
+    try {
+        const storageRef = ref(storage, `photos/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        
+        showNotification('Фото успішно завантажено!', 'success');
+        return downloadURL;
+    } catch (error) {
+        console.error('Помилка завантаження:', error);
+        throw new Error('Не вдалося завантажити фото');
+    }
+}
     </script>
 </body>
 </html>
+
