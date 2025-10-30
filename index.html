@@ -339,6 +339,30 @@
         
         .token-input-container {
             margin-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 15px;
+        }
+        
+        .upload-method-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .upload-method-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 5px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-method-btn.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
         }
     </style>
 </head>
@@ -407,6 +431,7 @@
                             <button class="btn btn-outline-light me-2" onclick="loadPeople()" id="refreshBtnSmall">
                                 <i class="fas fa-sync-alt me-1"></i>Оновити
                             </button>
+                            <span id="lastUpdate" class="text-muted"></span>
                         </div>
                     </div>
                 </div>
@@ -512,30 +537,43 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Фотографія *</label>
-                            <div class="file-upload-container" id="fileUploadContainer">
-                                <i class="fas fa-cloud-upload-alt fa-2x mb-3 text-muted"></i>
-                                <p class="mb-2">Перетягніть фото сюди або</p>
-                                <button type="button" class="btn btn-outline-primary" id="browseFilesBtn">Обрати файл</button>
-                                <input type="file" id="personPhotoFile" accept="image/*" class="d-none">
-                                <img id="previewImage" class="preview-image" alt="Попередній перегляд">
-                            </div>
-                            <div class="github-instructions">
-                                <p><strong>Як додати фото через GitHub:</strong></p>
-                                <ol>
-                                    <li>Завантажте фото у ваш репозиторій на GitHub (папка <code>foto</code>)</li>
-                                    <li>Натисніть на файл у репозиторії</li>
-                                    <li>Натисніть кнопку "Raw"</li>
-                                    <li>Скопіюйте посилання та вставте його нижче</li>
-                                    <li>Додайте <code>?raw=true</code> в кінець посилання</li>
-                                </ol>
-                            </div>
-                            <div class="form-text mt-3">Посилання на фото з GitHub:</div>
-                            <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/username/repo/blob/main/foto/photo.jpg?raw=true">
                             
-                            <div class="token-input-container">
-                                <label class="form-label">GitHub Token (для автоматичного завантаження)</label>
-                                <input type="password" class="form-control" id="githubToken" placeholder="Введіть ваш GitHub Token">
-                                <div class="form-text">Токен зберігається лише в цій сесії та дає змогу автоматично завантажувати фото</div>
+                            <div class="upload-method-selector">
+                                <button type="button" class="upload-method-btn active" data-method="link">Посилання на GitHub</button>
+                                <button type="button" class="upload-method-btn" data-method="file">Завантажити файл</button>
+                            </div>
+                            
+                            <!-- Метод 1: Посилання на GitHub -->
+                            <div id="linkMethod" class="upload-method">
+                                <div class="github-instructions">
+                                    <p><strong>Як додати фото через GitHub:</strong></p>
+                                    <ol>
+                                        <li>Завантажте фото у ваш репозиторій на GitHub (папка <code>foto</code>)</li>
+                                        <li>Натисніть на файл у репозиторії</li>
+                                        <li>Натисніть кнопку "Raw"</li>
+                                        <li>Скопіюйте посилання та вставте його нижче</li>
+                                        <li>Додайте <code>?raw=true</code> в кінець посилання</li>
+                                    </ol>
+                                </div>
+                                <div class="form-text mt-3">Посилання на фото з GitHub:</div>
+                                <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/username/repo/blob/main/foto/photo.jpg?raw=true" required>
+                            </div>
+                            
+                            <!-- Метод 2: Завантаження файлу -->
+                            <div id="fileMethod" class="upload-method" style="display: none;">
+                                <div class="file-upload-container" id="fileUploadContainer">
+                                    <i class="fas fa-cloud-upload-alt fa-2x mb-3 text-muted"></i>
+                                    <p class="mb-2">Перетягніть фото сюди або</p>
+                                    <button type="button" class="btn btn-outline-primary" id="browseFilesBtn">Обрати файл</button>
+                                    <input type="file" id="personPhotoFile" accept="image/*" class="d-none">
+                                    <img id="previewImage" class="preview-image" alt="Попередній перегляд">
+                                </div>
+                                
+                                <div class="token-input-container">
+                                    <label class="form-label">GitHub Token (обов'язково для завантаження файлів)</label>
+                                    <input type="password" class="form-control" id="githubToken" placeholder="Введіть ваш GitHub Token">
+                                    <div class="form-text">Токен потрібен тільки для автоматичного завантаження фото. Для посилань токен не потрібен.</div>
+                                </div>
                             </div>
                         </div>
                         
@@ -572,6 +610,7 @@
         let people = [];
         let lastUpdateTime = null;
         let githubToken = '';
+        let currentUploadMethod = 'link';
 
         // Початкові дані з фото з вашого GitHub
         const initialPeople = [
@@ -864,11 +903,16 @@
                 let photo = photoUrl;
                 
                 // Якщо фото не завантажено і не вказано посилання, використовуємо фото за замовчуванням
-                if (!photoFile && !photoUrl) {
+                if (currentUploadMethod === 'link' && !photoUrl) {
+                    showNotification('Будь ласка, введіть посилання на фото з GitHub.', 'error');
+                    return;
+                }
+                
+                if (currentUploadMethod === 'file' && !photoFile && !photoUrl) {
                     photo = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
                 }
                 
-                if (photoFile) {
+                if (currentUploadMethod === 'file' && photoFile) {
                     // Якщо користувач завантажив файл
                     showNotification('Завантаження фото на GitHub...', 'info');
                     try {
@@ -931,6 +975,29 @@
             }
         });
 
+        // Перемикач методів завантаження
+        document.querySelectorAll('.upload-method-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const method = this.getAttribute('data-method');
+                
+                // Оновлюємо активну кнопку
+                document.querySelectorAll('.upload-method-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Показуємо/ховаємо відповідні секції
+                document.querySelectorAll('.upload-method').forEach(section => {
+                    section.style.display = 'none';
+                });
+                
+                document.getElementById(method + 'Method').style.display = 'block';
+                currentUploadMethod = method;
+                
+                // Оновлюємо обов'язкові поля
+                document.getElementById('personPhotoUrl').required = (method === 'link');
+                document.getElementById('personPhotoFile').required = (method === 'file');
+            });
+        });
+
         // Drag and drop функціонал
         const fileUploadContainer = document.getElementById('fileUploadContainer');
         
@@ -973,4 +1040,3 @@
     </script>
 </body>
 </html>
-
