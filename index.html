@@ -359,9 +359,9 @@
             border-color: var(--primary-color);
         }
         
-        .file-method-info {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
+        .auto-upload-info {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid rgba(40, 167, 69, 0.3);
             border-radius: 5px;
             padding: 10px;
             margin-top: 10px;
@@ -559,7 +559,7 @@
                                     </ol>
                                 </div>
                                 <div class="form-text mt-3">Посилання на фото з GitHub:</div>
-                                <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/username/repo/blob/main/foto/photo.jpg?raw=true" required>
+                                <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/username/repo/blob/main/foto/photo.jpg?raw=true">
                             </div>
                             
                             <!-- Метод 2: Завантаження файлу -->
@@ -572,8 +572,8 @@
                                     <img id="previewImage" class="preview-image" alt="Попередній перегляд">
                                 </div>
                                 
-                                <div class="file-method-info">
-                                    <p><strong>Увага:</strong> Фото буде збережено локально. Для синхронізації між пристроями рекомендується використовувати метод з посиланням на GitHub.</p>
+                                <div class="auto-upload-info">
+                                    <p><strong>Фото буде автоматично завантажено на GitHub та доступне всім користувачам!</strong></p>
                                 </div>
                             </div>
                         </div>
@@ -607,6 +607,9 @@
         const GITHUB_USERNAME = 'danil1688'; // Замініть на ваш GitHub username
         const GITHUB_REPO = 'Sh_VIn'; // Замініть на назву вашого репозиторію
         const DATA_FILE_PATH = 'data/people.json'; // Шлях до файлу з даними в репозиторії
+        
+        // Спільний GitHub Token для всіх користувачів
+        const SHARED_GITHUB_TOKEN = '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';
         
         let people = [];
         let lastUpdateTime = null;
@@ -663,17 +666,100 @@
             showLoadingState(false);
         }
 
-        // Функція для збереження даних
+        // Функція для збереження даних в GitHub
         async function savePeople() {
-            showNotification('Збереження даних...', 'info');
+            showNotification('Збереження даних на GitHub...', 'info');
             
-            // Зберігаємо локально
-            localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-            lastUpdateTime = new Date();
-            updateLastUpdateTime();
-            showNotification('Дані успішно збережено локально!', 'success');
+            try {
+                // Спочатку отримуємо поточний файл, щоб отримати SHA
+                const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
+                    headers: {
+                        'Authorization': `token ${SHARED_GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                let sha = null;
+                if (getResponse.ok) {
+                    const fileData = await getResponse.json();
+                    sha = fileData.sha;
+                }
+                
+                // Тепер оновлюємо файл
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify({ people: people }, null, 2))));
+                
+                const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${SHARED_GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: `Оновлено дані: ${new Date().toLocaleString()}`,
+                        content: content,
+                        sha: sha
+                    })
+                });
+                
+                if (response.ok) {
+                    // Також зберігаємо локально
+                    localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+                    lastUpdateTime = new Date();
+                    updateLastUpdateTime();
+                    showNotification('Дані успішно збережено на GitHub!', 'success');
+                    return true;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Помилка збереження');
+                }
+            } catch (error) {
+                console.error('Помилка збереження:', error);
+                // Зберігаємо локально як запасний варіант
+                localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+                showNotification(`Помилка збереження на GitHub: ${error.message}. Дані збережено локально.`, 'error');
+                return false;
+            }
+        }
+
+        // Функція для завантаження фото на GitHub
+        async function uploadImageToGitHub(file) {
+            showNotification('Завантаження фото на GitHub...', 'info');
             
-            return true;
+            // Генеруємо унікальне ім'я файлу
+            const fileExtension = file.name.split('.').pop();
+            const filename = `photo_${Date.now()}.${fileExtension}`;
+            
+            try {
+                // Конвертуємо файл в base64
+                const base64Content = await fileToBase64(file);
+                
+                const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/foto/${filename}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${SHARED_GITHUB_TOKEN}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify({
+                        message: `Додано фото: ${filename}`,
+                        content: base64Content.split(',')[1] // Видаляємо префікс data:image/...;base64,
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const photoUrl = `https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/blob/main/foto/${filename}?raw=true`;
+                    showNotification('Фото успішно завантажено на GitHub!', 'success');
+                    return photoUrl;
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Помилка завантаження фото на GitHub');
+                }
+            } catch (error) {
+                console.error('Помилка завантаження фото:', error);
+                throw new Error(`Помилка завантаження фото: ${error.message}`);
+            }
         }
 
         // Допоміжна функція для конвертації файлу в base64
@@ -794,7 +880,7 @@
             
             people.push(person);
             
-            // Зберігаємо дані
+            // Зберігаємо в GitHub
             const success = await savePeople();
             if (success) {
                 renderPeople();
@@ -826,13 +912,12 @@
                 
                 // Обробка фото в залежності від методу
                 if (currentUploadMethod === 'file' && photoFile) {
-                    // Якщо користувач завантажив файл - конвертуємо в base64
-                    showNotification('Обробка фото...', 'info');
+                    // Якщо користувач завантажив файл - завантажуємо на GitHub
                     try {
-                        photo = await fileToBase64(photoFile);
+                        photo = await uploadImageToGitHub(photoFile);
                     } catch (error) {
-                        console.error('Помилка обробки фото:', error);
-                        showNotification('Помилка обробки фото', 'error');
+                        console.error('Помилка завантаження фото:', error);
+                        showNotification(`Помилка завантаження фото: ${error.message}`, 'error');
                         return;
                     }
                 }
