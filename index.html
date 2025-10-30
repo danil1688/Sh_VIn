@@ -336,6 +336,10 @@
             margin-top: 15px;
             font-size: 0.9rem;
         }
+        
+        .token-input-container {
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body class="animated-bg">
@@ -528,6 +532,12 @@
                             </div>
                             <div class="form-text mt-3">Посилання на фото з GitHub:</div>
                             <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/username/repo/blob/main/foto/photo.jpg?raw=true">
+                            
+                            <div class="token-input-container">
+                                <label class="form-label">GitHub Token (для автоматичного завантаження)</label>
+                                <input type="password" class="form-control" id="githubToken" placeholder="Введіть ваш GitHub Token">
+                                <div class="form-text">Токен зберігається лише в цій сесії та дає змогу автоматично завантажувати фото</div>
+                            </div>
                         </div>
                         
                         <div class="form-check mb-3">
@@ -555,17 +565,14 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Конфігурація JSONBin.io
-        const JSONBIN_BIN_ID = '6903529843b1c97be98c1841';
-        const JSONBIN_MASTER_KEY = '$2a$10$PMuEJVXwnQR52oZoXHXySu6jLJSwBENnJF0ro60W55m/LJhmtZtvm';
-
         // Конфігурація GitHub
         const GITHUB_USERNAME = 'danil1688'; // Замініть на ваш GitHub username
         const GITHUB_REPO = 'Sh_VIn'; // Замініть на назву вашого репозиторію
-        const GITHUB_TOKEN = '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'; // Заповніть, якщо ви хочете автоматичне завантаження
-
+        const DATA_FILE_PATH = 'data/people.json'; // Шлях до файлу з даними в репозиторії
+        
         let people = [];
         let lastUpdateTime = null;
+        let githubToken = '';
 
         // Початкові дані з фото з вашого GitHub
         const initialPeople = [
@@ -589,26 +596,22 @@
             }
         ];
 
-        // Функція для завантаження даних з JSONBin
+        // Функція для завантаження даних з GitHub
         async function loadPeople() {
             showLoadingState(true);
-            showNotification('Завантаження даних...', 'info');
+            showNotification('Завантаження даних з GitHub...', 'info');
             
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: {
-                        'X-Master-Key': JSONBIN_MASTER_KEY
-                    }
-                });
+                const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/${DATA_FILE_PATH}?t=${Date.now()}`);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    people = data.record.people || initialPeople;
+                    people = data.people || initialPeople;
                     lastUpdateTime = new Date();
                     updateLastUpdateTime();
-                    showNotification('Дані успішно завантажено!', 'success');
+                    showNotification('Дані успішно завантажено з GitHub!', 'success');
                 } else {
-                    throw new Error('Помилка завантаження');
+                    throw new Error('Помилка завантаження з GitHub');
                 }
             } catch (error) {
                 console.error('Помилка завантаження:', error);
@@ -622,18 +625,50 @@
             showLoadingState(false);
         }
 
-        // Функція для збереження даних в JSONBin
+        // Функція для збереження даних в GitHub
         async function savePeople() {
-            showNotification('Збереження даних...', 'info');
+            showNotification('Збереження даних на GitHub...', 'info');
+            
+            // Отримуємо токен з форми або збережений
+            const tokenInput = document.getElementById('githubToken');
+            githubToken = tokenInput.value || githubToken;
+            
+            if (!githubToken) {
+                showNotification('Помилка: GitHub токен не вказаний. Дані збережено локально.', 'error');
+                localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+                return false;
+            }
             
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                // Спочатку отримуємо поточний файл, щоб отримати SHA
+                const getResponse = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                let sha = null;
+                if (getResponse.ok) {
+                    const fileData = await getResponse.json();
+                    sha = fileData.sha;
+                }
+                
+                // Тепер оновлюємо файл
+                const content = btoa(unescape(encodeURIComponent(JSON.stringify({ people: people }, null, 2))));
+                
+                const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/${DATA_FILE_PATH}`, {
                     method: 'PUT',
                     headers: {
+                        'Authorization': `token ${githubToken}`,
                         'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_MASTER_KEY
+                        'Accept': 'application/vnd.github.v3+json'
                     },
-                    body: JSON.stringify({ people: people })
+                    body: JSON.stringify({
+                        message: `Оновлено дані: ${new Date().toLocaleString()}`,
+                        content: content,
+                        sha: sha
+                    })
                 });
                 
                 if (response.ok) {
@@ -641,24 +676,30 @@
                     localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
                     lastUpdateTime = new Date();
                     updateLastUpdateTime();
-                    showNotification('Дані успішно збережено!', 'success');
+                    showNotification('Дані успішно збережено на GitHub!', 'success');
                     return true;
                 } else {
-                    throw new Error('Помилка збереження');
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Помилка збереження');
                 }
             } catch (error) {
                 console.error('Помилка збереження:', error);
                 // Зберігаємо локально як запасний варіант
                 localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-                showNotification('Дані збережено локально', 'warning');
-                return true;
+                showNotification(`Помилка збереження на GitHub: ${error.message}. Дані збережено локально.`, 'error');
+                return false;
             }
         }
 
-        // Функція для завантаження фото на GitHub (додаткова функція)
+        // Функція для завантаження фото на GitHub
         async function uploadImageToGitHub(file, filename) {
-            if (!GITHUB_TOKEN) {
-                throw new Error('GitHub токен не налаштований. Будь ласка, використовуйте ручне завантаження фото.');
+            if (!githubToken) {
+                const tokenInput = document.getElementById('githubToken');
+                githubToken = tokenInput.value;
+                
+                if (!githubToken) {
+                    throw new Error('GitHub токен не вказаний. Будь ласка, введіть токен у відповідне поле.');
+                }
             }
             
             // Конвертуємо файл в base64
@@ -667,8 +708,9 @@
             const response = await fetch(`https://api.github.com/repos/${GITHUB_USERNAME}/${GITHUB_REPO}/contents/foto/${filename}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `token ${GITHUB_TOKEN}`,
-                    'Content-Type': 'application/json'
+                    'Authorization': `token ${githubToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/vnd.github.v3+json'
                 },
                 body: JSON.stringify({
                     message: `Додано фото: ${filename}`,
@@ -680,7 +722,8 @@
                 const data = await response.json();
                 return `https://github.com/${GITHUB_USERNAME}/${GITHUB_REPO}/blob/main/foto/${filename}?raw=true`;
             } else {
-                throw new Error('Помилка завантаження фото на GitHub');
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Помилка завантаження фото на GitHub');
             }
         }
 
@@ -802,7 +845,7 @@
             
             people.push(person);
             
-            // Зберігаємо в JSONBin
+            // Зберігаємо в GitHub
             const success = await savePeople();
             if (success) {
                 renderPeople();
@@ -828,21 +871,13 @@
                 
                 if (photoFile) {
                     // Якщо користувач завантажив файл
-                    if (GITHUB_TOKEN) {
-                        // Автоматичне завантаження на GitHub
-                        showNotification('Завантаження фото на GitHub...', 'info');
-                        try {
-                            const filename = `photo_${Date.now()}_${photoFile.name}`;
-                            photo = await uploadImageToGitHub(photoFile, filename);
-                        } catch (error) {
-                            console.error('Помилка завантаження фото:', error);
-                            showNotification('Помилка завантаження фото. Будь ласка, використовуйте посилання на GitHub.', 'error');
-                            return;
-                        }
-                    } else {
-                        // Якщо токен GitHub не налаштований, просимо користувача завантажити фото вручну
-                        showNotification('Будь ласка, завантажте фото вручну на GitHub та вставте посилання.', 'info');
-                        document.getElementById('personPhotoUrl').focus();
+                    showNotification('Завантаження фото на GitHub...', 'info');
+                    try {
+                        const filename = `photo_${Date.now()}_${photoFile.name.replace(/\s+/g, '_')}`;
+                        photo = await uploadImageToGitHub(photoFile, filename);
+                    } catch (error) {
+                        console.error('Помилка завантаження фото:', error);
+                        showNotification(`Помилка завантаження фото: ${error.message}`, 'error');
                         return;
                     }
                 }
@@ -876,7 +911,7 @@
             
             setTimeout(() => {
                 notification.style.display = 'none';
-            }, 3000);
+            }, 5000);
         }
 
         // Обробники подій для завантаження файлів
