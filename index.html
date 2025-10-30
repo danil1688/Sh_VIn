@@ -328,53 +328,6 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
-        
-        .github-instructions {
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 15px;
-            font-size: 0.9rem;
-        }
-        
-        .upload-method-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .upload-method-btn {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 5px;
-            background: rgba(255,255,255,0.05);
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .upload-method-btn.active {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .file-method-info {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
-            font-size: 0.9rem;
-        }
-        
-        .admin-section {
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-top: 20px;
-            border-left: 4px solid var(--primary-color);
-        }
     </style>
 </head>
 <body class="animated-bg">
@@ -437,7 +390,7 @@
                 <div class="row">
                     <div class="col-lg-8 mx-auto text-center">
                         <p class="lead">"Шлюхи Вінниці" - це спільна платформа, де кожен може додати інформацію про видатних особистостей нашого міста.</p>
-                        <p><strong>Увага:</strong> Для того щоб фото було видно всім, використовуйте метод з посиланням на GitHub!</p>
+                        <p><strong>Увага:</strong> Всі додані шлюхи з'являться у всіх користувачів сайту!</p>
                         <div class="mt-4">
                             <button class="btn btn-outline-light me-2" onclick="loadPeople()" id="refreshBtnSmall">
                                 <i class="fas fa-sync-alt me-1"></i>Оновити
@@ -548,42 +501,15 @@
                         
                         <div class="mb-3">
                             <label class="form-label">Фотографія *</label>
-                            
-                            <div class="upload-method-selector">
-                                <button type="button" class="upload-method-btn active" data-method="link">Посилання на GitHub</button>
-                                <button type="button" class="upload-method-btn" data-method="file">Завантажити файл</button>
+                            <div class="file-upload-container" id="fileUploadContainer">
+                                <i class="fas fa-cloud-upload-alt fa-2x mb-3 text-muted"></i>
+                                <p class="mb-2">Перетягніть фото сюди або</p>
+                                <button type="button" class="btn btn-outline-primary" id="browseFilesBtn">Обрати файл</button>
+                                <input type="file" id="personPhotoFile" accept="image/*" class="d-none">
+                                <img id="previewImage" class="preview-image" alt="Попередній перегляд">
                             </div>
-                            
-                            <!-- Метод 1: Посилання на GitHub -->
-                            <div id="linkMethod" class="upload-method">
-                                <div class="github-instructions">
-                                    <p><strong>Як додати фото через GitHub:</strong></p>
-                                    <ol>
-                                        <li>Завантажте фото у ваш репозиторій на GitHub (папка <code>foto</code>)</li>
-                                        <li>Натисніть на файл у репозиторії</li>
-                                        <li>Натисніть кнопку "Raw"</li>
-                                        <li>Скопіюйте посилання та вставте його нижче</li>
-                                        <li>Додайте <code>?raw=true</code> в кінець посилання</li>
-                                    </ol>
-                                </div>
-                                <div class="form-text mt-3">Посилання на фото з GitHub:</div>
-                                <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://github.com/danil1688/Sh_VIn/blob/main/foto/photo.jpg?raw=true">
-                            </div>
-                            
-                            <!-- Метод 2: Завантаження файлу -->
-                            <div id="fileMethod" class="upload-method" style="display: none;">
-                                <div class="file-upload-container" id="fileUploadContainer">
-                                    <i class="fas fa-cloud-upload-alt fa-2x mb-3 text-muted"></i>
-                                    <p class="mb-2">Перетягніть фото сюди або</p>
-                                    <button type="button" class="btn btn-outline-primary" id="browseFilesBtn">Обрати файл</button>
-                                    <input type="file" id="personPhotoFile" accept="image/*" class="d-none">
-                                    <img id="previewImage" class="preview-image" alt="Попередній перегляд">
-                                </div>
-                                
-                                <div class="file-method-info">
-                                    <p><strong>Увага:</strong> Фото буде збережено локально і буде видно тільки на вашому пристрої. Для того щоб фото було видно всім, використовуйте метод з посиланням на GitHub.</p>
-                                </div>
-                            </div>
+                            <div class="form-text">Фото буде збережено локально. Для того щоб воно було видно всім, завантажте його на ImgBB та вставте посилання нижче:</div>
+                            <input type="url" class="form-control mt-2" id="personPhotoUrl" placeholder="https://i.ibb.co/...">
                         </div>
                         
                         <div class="form-check mb-3">
@@ -596,20 +522,6 @@
                         <div class="mb-3">
                             <label for="addedByName" class="form-label">Ваше ім'я *</label>
                             <input type="text" class="form-control" id="addedByName" required placeholder="Хто додає цю людину?">
-                        </div>
-
-                        <!-- Інструкції для адміністратора -->
-                        <div class="admin-section">
-                            <h6><i class="fas fa-tools me-2"></i>Для адміністратора:</h6>
-                            <p class="mb-2">Щоб дані були доступні всім користувачам:</p>
-                            <ol class="small">
-                                <li>Завантажте файл <code>data.json</code> з цієї сторінки</li>
-                                <li>Завантажте його у ваш репозиторій GitHub у папку <code>data/</code></li>
-                                <li>Оновіть посилання у коді на ваше посилання GitHub Pages</li>
-                            </ol>
-                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="downloadData()">
-                                <i class="fas fa-download me-1"></i>Завантажити data.json
-                            </button>
                         </div>
                     </form>
                 </div>
@@ -625,18 +537,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Конфігурація GitHub (для читання даних)
-        const GITHUB_USERNAME = 'danil1688';
-        const GITHUB_REPO = 'Sh_VIn';
-        
-        // Посилання на дані (замініть на ваше посилання GitHub Pages)
-        const DATA_URL = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/data/data.json`;
-        // Або використовуйте локальні дані:
-        // const DATA_URL = 'data/data.json';
+        // Конфігурація Firebase (безкоштовна база даних)
+        const FIREBASE_URL = 'https://vinnytsia-people-default-rtdb.europe-west1.firebasedatabase.app/people.json';
         
         let people = [];
         let lastUpdateTime = null;
-        let currentUploadMethod = 'link';
 
         // Початкові дані
         const initialPeople = [
@@ -660,22 +565,27 @@
             }
         ];
 
-        // Функція для завантаження даних
+        // Функція для завантаження даних з Firebase
         async function loadPeople() {
             showLoadingState(true);
             showNotification('Завантаження даних...', 'info');
             
             try {
-                const response = await fetch(`${DATA_URL}?t=${Date.now()}`);
+                const response = await fetch(FIREBASE_URL);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    people = data.people || initialPeople;
+                    // Конвертуємо об'єкт в масив
+                    if (data) {
+                        people = Object.values(data);
+                    } else {
+                        people = initialPeople;
+                    }
                     lastUpdateTime = new Date();
                     updateLastUpdateTime();
                     showNotification('Дані успішно завантажено!', 'success');
                 } else {
-                    throw new Error('Помилка завантаження даних');
+                    throw new Error('Помилка завантаження');
                 }
             } catch (error) {
                 console.error('Помилка завантаження:', error);
@@ -689,30 +599,65 @@
             showLoadingState(false);
         }
 
-        // Функція для збереження даних
+        // Функція для збереження даних в Firebase
         async function savePeople() {
             showNotification('Збереження даних...', 'info');
             
-            // Зберігаємо локально
-            localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
-            lastUpdateTime = new Date();
-            updateLastUpdateTime();
-            showNotification('Дані успішно збережено локально!', 'success');
-            
-            return true;
+            try {
+                const response = await fetch(FIREBASE_URL, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(people.reduce((acc, person, index) => {
+                        acc[index] = person;
+                        return acc;
+                    }, {}))
+                });
+                
+                if (response.ok) {
+                    // Також зберігаємо локально
+                    localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+                    lastUpdateTime = new Date();
+                    updateLastUpdateTime();
+                    showNotification('Дані успішно збережено! Всі побачать оновлення!', 'success');
+                    return true;
+                } else {
+                    throw new Error('Помилка збереження');
+                }
+            } catch (error) {
+                console.error('Помилка збереження:', error);
+                // Зберігаємо локально
+                localStorage.setItem('vinnytsiaPeople', JSON.stringify(people));
+                showNotification('Дані збережено локально', 'warning');
+                return false;
+            }
         }
 
-        // Функція для завантаження файлу даних
-        function downloadData() {
-            const dataStr = JSON.stringify({ people: people }, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'data.json';
-            link.click();
-            URL.revokeObjectURL(url);
-            showNotification('Файл data.json завантажено!', 'success');
+        // Функція для завантаження фото на ImgBB (безкоштовний хостинг)
+        async function uploadImageToImgBB(file) {
+            showNotification('Завантаження фото...', 'info');
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            try {
+                const response = await fetch('https://api.imgbb.com/1/upload?key=2c83140a4caed430a673e3b8e063b6f9', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showNotification('Фото успішно завантажено!', 'success');
+                    return data.data.url;
+                } else {
+                    throw new Error('Помилка завантаження фото');
+                }
+            } catch (error) {
+                console.error('Помилка завантаження фото:', error);
+                throw new Error('Не вдалося завантажити фото');
+            }
         }
 
         // Допоміжна функція для конвертації файлу в base64
@@ -833,7 +778,7 @@
             
             people.push(person);
             
-            // Зберігаємо дані
+            // Зберігаємо в Firebase
             const success = await savePeople();
             if (success) {
                 renderPeople();
@@ -852,31 +797,24 @@
             if (name && description && addedByName) {
                 let photo = photoUrl;
                 
-                // Перевіряємо обов'язкові поля в залежності від методу
-                if (currentUploadMethod === 'link' && !photoUrl) {
-                    showNotification('Будь ласка, введіть посилання на фото з GitHub.', 'error');
-                    return;
-                }
-                
-                if (currentUploadMethod === 'file' && !photoFile) {
-                    showNotification('Будь ласка, виберіть файл для завантаження.', 'error');
-                    return;
-                }
-                
-                // Обробка фото в залежності від методу
-                if (currentUploadMethod === 'file' && photoFile) {
-                    // Якщо користувач завантажив файл - конвертуємо в base64
-                    showNotification('Обробка фото...', 'info');
+                // Якщо користувач завантажив файл
+                if (photoFile) {
                     try {
-                        photo = await fileToBase64(photoFile);
+                        // Завантажуємо фото на ImgBB
+                        photo = await uploadImageToImgBB(photoFile);
                     } catch (error) {
-                        console.error('Помилка обробки фото:', error);
-                        showNotification('Помилка обробки фото', 'error');
-                        return;
+                        console.error('Помилка завантаження фото:', error);
+                        // Якщо не вдалося завантажити, використовуємо base64
+                        photo = await fileToBase64(photoFile);
+                        showNotification('Фото збережено локально. Для публічного доступу використовуйте ImgBB.', 'warning');
                     }
                 }
                 
-                // Додаємо людину
+                // Якщо немає фото, використовуємо фото за замовчуванням
+                if (!photoFile && !photoUrl) {
+                    photo = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80';
+                }
+                
                 addPerson({ name, description, photo, isVip, addedBy: addedByName });
                 resetForm();
             } else {
@@ -925,29 +863,6 @@
                 };
                 reader.readAsDataURL(file);
             }
-        });
-
-        // Перемикач методів завантаження
-        document.querySelectorAll('.upload-method-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const method = this.getAttribute('data-method');
-                
-                // Оновлюємо активну кнопку
-                document.querySelectorAll('.upload-method-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Показуємо/ховаємо відповідні секції
-                document.querySelectorAll('.upload-method').forEach(section => {
-                    section.style.display = 'none';
-                });
-                
-                document.getElementById(method + 'Method').style.display = 'block';
-                currentUploadMethod = method;
-                
-                // Оновлюємо обов'язкові поля
-                document.getElementById('personPhotoUrl').required = (method === 'link');
-                document.getElementById('personPhotoFile').required = (method === 'file');
-            });
         });
 
         // Drag and drop функціонал
